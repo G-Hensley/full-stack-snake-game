@@ -1,4 +1,4 @@
-const userResolvers = (user?) => ({
+export const userResolvers = (user?) => ({
   Query: {
     user: {
       id: user?.id,
