@@ -23,6 +23,8 @@ exports.typeDefs = `
 
   type Query {
     user: User!
-    scores: [Score!]! 
+    users: [User!]!
+    score(id: ID!): Score
+    scores: [Score!]!
   }
 `;

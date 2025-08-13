@@ -1,43 +1,125 @@
 import { Score } from '../types/score';
+import pool from '../db';
 
-export const scoreResolvers = (score?: Score) => ({
+export const scoreResolvers = {
   Query: {
-    score: {
-      id: score?.id,
-      user: {
-        id: score?.user?.id,
-        username: score?.user?.username,
-        password_hash: score?.user?.password_hash
-      },
-      value: score?.value
+    score: async (_: any, { id }: { id: string }) => {
+      try {
+        const result = await pool.query(`
+          SELECT s.*, u.username, u.password_hash 
+          FROM scores s 
+          JOIN users u ON s.user_id = u.id 
+          WHERE s.id = $1
+        `, [id]);
+        
+        if (result.rows.length === 0) {
+          return null; // Return null if score not found
+        }
+
+        const row = result.rows[0];
+        return {
+          id: row.id,
+          value: row.value,
+          user: {
+            id: row.user_id,
+            username: row.username,
+            password_hash: row.password_hash
+          }
+        };
+      } catch (error) {
+        throw new Error(`Failed to fetch score: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    },
+
+    scores: async () => {
+      try {
+        const result = await pool.query(`
+          SELECT s.*, u.username, u.password_hash 
+          FROM scores s 
+          JOIN users u ON s.user_id = u.id 
+          ORDER BY s.value DESC
+        `);
+        
+        return result.rows.map(row => ({
+          id: row.id,
+          value: row.value,
+          user: {
+            id: row.user_id,
+            username: row.username,
+            password_hash: row.password_hash
+          }
+        }));
+      } catch (error) {
+        throw new Error(`Failed to fetch scores: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   },
 
   Mutation: {
-    createScore: (parent: any, { input }: { input: Score }) => {
-      const newScore = {
-        user: {
-          id: input.user?.id,
-          username: input.user?.username,
-          password_hash: input.user?.password_hash
-        },
-        value: input.value
-      };
-      // Logic to save the new score to the database
-      return newScore;
+    createScore: async (_: any, { userId, value }: { userId: string; value: number }) => {
+      try {
+        // First check if user exists
+        const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+        if (userResult.rows.length === 0) {
+          throw new Error('User not found');
+        }
+
+        // Insert new score
+        const result = await pool.query(
+          'INSERT INTO scores (user_id, value) VALUES ($1, $2) RETURNING *',
+          [userId, value]
+        );
+
+        const newScore = result.rows[0];
+        const user = userResult.rows[0];
+
+        return {
+          id: newScore.id,
+          value: newScore.value,
+          user: {
+            id: user.id,
+            username: user.username,
+            password_hash: user.password_hash
+          }
+        };
+      } catch (error) {
+        throw new Error(`Failed to create score: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     },
-    updateScore: (parent: any, { id, value }: { id: string; value: Score }) => {
-      const updatedScore = {
-        id,
-        user: {
-          id: value.user?.id,
-          username: value.user?.username,
-          password_hash: value.user?.password_hash
-        },
-        value: value.value
-      };
-      // Logic to update the score in the database
-      return updatedScore;
+
+    updateScore: async (_: any, { id, value }: { id: string; value: number }) => {
+      try {
+        // Update the score
+        const result = await pool.query(
+          `UPDATE scores SET value = $1 WHERE id = $2 RETURNING *`,
+          [value, id]
+        );
+
+        if (result.rows.length === 0) {
+          throw new Error('Score not found');
+        }
+
+        // Get the user information
+        const userResult = await pool.query(
+          'SELECT * FROM users WHERE id = $1',
+          [result.rows[0].user_id]
+        );
+
+        const updatedScore = result.rows[0];
+        const user = userResult.rows[0];
+
+        return {
+          id: updatedScore.id,
+          value: updatedScore.value,
+          user: {
+            id: user.id,
+            username: user.username,
+            password_hash: user.password_hash
+          }
+        };
+      } catch (error) {
+        throw new Error(`Failed to update score: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
-})
+};
