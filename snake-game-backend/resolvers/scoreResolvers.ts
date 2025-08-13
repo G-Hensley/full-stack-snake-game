@@ -1,4 +1,6 @@
-export const scoreResolvers = (score?) => ({
+import { Score } from '../types/score';
+
+export const scoreResolvers = (score?: Score) => ({
   Query: {
     score: {
       id: score?.id,
@@ -12,25 +14,25 @@ export const scoreResolvers = (score?) => ({
   },
 
   Mutation: {
-    createScore: (parent, { input }) => {
+    createScore: (parent: any, { input }: { input: Score }) => {
       const newScore = {
         user: {
-          id: input.user.id,
-          username: input.user.username,
-          password_hash: input.user.password_hash
+          id: input.user?.id,
+          username: input.user?.username,
+          password_hash: input.user?.password_hash
         },
         value: input.value
       };
       // Logic to save the new score to the database
       return newScore;
     },
-    updateScore: (parent, { id, value }) => {
+    updateScore: (parent: any, { id, value }: { id: string; value: Score }) => {
       const updatedScore = {
         id,
         user: {
-          id: value.user.id,
-          username: value.user.username,
-          password_hash: value.user.password_hash
+          id: value.user?.id,
+          username: value.user?.username,
+          password_hash: value.user?.password_hash
         },
         value: value.value
       };

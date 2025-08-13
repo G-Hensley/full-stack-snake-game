@@ -1,47 +1,16 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import { typeDefs } from './schema/schema';
-
-const resolvers = {
-  Query: {
-    user: () => ({
-        'id': '45454',
-        'username': "JohnDoe",
-        'password_hash': "hashed_password"
-    }),
-    scores: () => ([
-        {
-            'id': '12345',
-            'user': {
-                'id': '45454',
-                'username': "JohnDoe",
-                'password_hash': "hashed_password"
-            },
-            'value': 100
-        }
-    ])
-  }
-}
-
-const Mutation = {
-  updateScore: (parent: any, { id, value }: { id: string; value: number }) => {
-    // Logic to update the score in the database
-    return {
-      id,
-      user: {
-        id: '45454',
-        username: "JohnDoe",
-        password_hash: "hashed_password"
-      },
-      value
-    };
-  }
-}
+import { scoreResolvers } from './resolvers/scoreResolvers';
 
 const server = new ApolloServer({
   typeDefs,
   resolvers: {
-    Query: resolvers.Query,
+    Query: {
+      ...userResolvers.Query,
+      ...gameResolvers.Query,
+      ...scoreResolvers.Query
+    },
     Mutation
   }
 });
