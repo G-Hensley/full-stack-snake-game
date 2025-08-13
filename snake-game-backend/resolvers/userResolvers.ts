@@ -1,4 +1,6 @@
-export const userResolvers = (user?) => ({
+import { User } from "../types/user";
+
+export const userResolvers = (user?: User) => ({
   Query: {
     user: {
       id: user?.id,
@@ -8,7 +10,7 @@ export const userResolvers = (user?) => ({
   },
 
   Mutation: {
-    createUser: (parent, { input }) => {
+    createUser: (parent: any, { input }: { input: User }) => {
       const newUser = {
         username: input.username,
         password_hash: input.password_hash
