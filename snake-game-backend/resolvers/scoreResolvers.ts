@@ -1,9 +1,14 @@
 import { Score } from '../types/score';
 import pool from '../db';
+import { User } from '../types/user';
 
+// Score resolvers - This handles score-related queries and mutations
 export const scoreResolvers = {
+
+  // Queries for getting a single score based on ID and a list of all scores
   Query: {
-    score: async (_: any, { id }: { id: string }) => {
+    score: async (_: Score, { id }: { id: string }) => {
+      // Try to fetch the score by ID from the database
       try {
         const result = await pool.query(`
           SELECT s.*, u.username, u.password_hash 
@@ -13,10 +18,11 @@ export const scoreResolvers = {
         `, [id]);
         
         if (result.rows.length === 0) {
-          return null; // Return null if score not found
+          return null;
         }
 
         const row = result.rows[0];
+        // Map the database row to the Score type
         return {
           id: row.id,
           value: row.value,
@@ -24,14 +30,15 @@ export const scoreResolvers = {
             id: row.user_id,
             username: row.username,
             password_hash: row.password_hash
-          }
-        };
+          } as User
+        } as Score;
       } catch (error) {
         throw new Error(`Failed to fetch score: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },
 
     scores: async () => {
+      // Try to fetch all scores from the database
       try {
         const result = await pool.query(`
           SELECT s.*, u.username, u.password_hash 
@@ -47,8 +54,9 @@ export const scoreResolvers = {
             id: row.user_id,
             username: row.username,
             password_hash: row.password_hash
-          }
-        }));
+          } as User
+        } as Score
+      ));
       } catch (error) {
         throw new Error(`Failed to fetch scores: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
@@ -56,7 +64,7 @@ export const scoreResolvers = {
   },
 
   Mutation: {
-    createScore: async (_: any, { userId, value }: { userId: string; value: number }) => {
+    createScore: async (_: Score, { userId, value }: { userId: string; value: number }) => {
       try {
         // First check if user exists
         const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
@@ -80,14 +88,14 @@ export const scoreResolvers = {
             id: user.id,
             username: user.username,
             password_hash: user.password_hash
-          }
-        };
+          } as User
+        } as Score;
       } catch (error) {
         throw new Error(`Failed to create score: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },
 
-    updateScore: async (_: any, { id, value }: { id: string; value: number }) => {
+    updateScore: async (_: Score, { id, value }: { id: string; value: number }) => {
       try {
         // Update the score
         const result = await pool.query(
@@ -115,8 +123,8 @@ export const scoreResolvers = {
             id: user.id,
             username: user.username,
             password_hash: user.password_hash
-          }
-        };
+          } as User
+        } as Score;
       } catch (error) {
         throw new Error(`Failed to update score: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }

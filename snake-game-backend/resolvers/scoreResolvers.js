@@ -5,9 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.scoreResolvers = void 0;
 const db_1 = __importDefault(require("../db"));
+// Score resolvers - This handles score-related queries and mutations
 exports.scoreResolvers = {
+    // Queries for getting a single score based on ID and a list of all scores
     Query: {
         score: async (_, { id }) => {
+            // Try to fetch the score by ID from the database
             try {
                 const result = await db_1.default.query(`
           SELECT s.*, u.username, u.password_hash 
@@ -16,9 +19,10 @@ exports.scoreResolvers = {
           WHERE s.id = $1
         `, [id]);
                 if (result.rows.length === 0) {
-                    return null; // Return null if score not found
+                    return null;
                 }
                 const row = result.rows[0];
+                // Map the database row to the Score type
                 return {
                     id: row.id,
                     value: row.value,
@@ -34,6 +38,7 @@ exports.scoreResolvers = {
             }
         },
         scores: async () => {
+            // Try to fetch all scores from the database
             try {
                 const result = await db_1.default.query(`
           SELECT s.*, u.username, u.password_hash 

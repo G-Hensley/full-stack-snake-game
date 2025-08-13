@@ -5,12 +5,11 @@ import jwt from "jsonwebtoken";
 
 export const userResolvers = {
   Query: {
-    user: async (_: any, __: any, context: any) => {
+    user: async (_: User, __: any, context: any) => {
       // This would typically get user from JWT token in context
-      // For now, let's get the first user as an example
       try {
-        const result = await pool.query('SELECT * FROM users LIMIT 1');
-        return result.rows[0];
+        const result = await pool.query('SELECT * FROM users WHERE id = $1', [context.userId]);
+        return result.rows[0] as User;
       } catch (error) {
         throw new Error('Failed to fetch user');
       }
@@ -67,9 +66,12 @@ export const userResolvers = {
         }
 
         // Generate JWT token
+        if (!process.env.JWT_SECRET) {
+          throw new Error('JWT_SECRET is not defined');
+        }
         const token = jwt.sign(
           { userId: user.id, username: user.username },
-          process.env.JWT_SECRET || 'your-secret-key',
+          process.env.JWT_SECRET,
           { expiresIn: '7d' }
         );
 

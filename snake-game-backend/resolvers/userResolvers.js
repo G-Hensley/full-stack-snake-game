@@ -11,9 +11,8 @@ exports.userResolvers = {
     Query: {
         user: async (_, __, context) => {
             // This would typically get user from JWT token in context
-            // For now, let's get the first user as an example
             try {
-                const result = await db_1.default.query('SELECT * FROM users LIMIT 1');
+                const result = await db_1.default.query('SELECT * FROM users WHERE id = $1', [context.userId]);
                 return result.rows[0];
             }
             catch (error) {
@@ -63,7 +62,10 @@ exports.userResolvers = {
                     throw new Error('Invalid password');
                 }
                 // Generate JWT token
-                const token = jsonwebtoken_1.default.sign({ userId: user.id, username: user.username }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '7d' });
+                if (!process.env.JWT_SECRET) {
+                    throw new Error('JWT_SECRET is not defined');
+                }
+                const token = jsonwebtoken_1.default.sign({ userId: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '7d' });
                 return token;
             }
             catch (error) {
